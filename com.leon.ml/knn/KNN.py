@@ -2,7 +2,7 @@
 
 from numpy import *
 import operator
-
+from os import listdir
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -47,17 +47,108 @@ def file2matrix(filename):
         index += 1
     return returnMat, classLabelVector
 
+def autoNorm(dataSet):
+    """
+    由于各特征值取值范围不同,但如果认为各特征值同等重要,则要对数据进行归一化,减少取值范围差异带来的影响
+    newValue = (oldValue - min) / (max-min)
+    其中,max,min分别为某列特征值中的最大值和最小值
+    :param dataSet:
+    :return:
+    """
+    minVals = dataSet.min(0) # 选取每列的最小值放入minVlas中
+    maxVals = dataSet.max(0) # 选取每列的最大值放入maxVlas中
+    ranges = maxVals - minVals # 得到max - min
+    normDataSet = zeros(shape(dataSet))
+    m = dataSet.shape[0]
+    normDataSet = dataSet - tile(minVals, (m, 1)) # (oldValue - min)
+    normDataSet = normDataSet / tile(ranges, (m, 1)) # (oldValue - min) / (max-min), 点除,非矩阵除法
+    return normDataSet, ranges, minVals
+
+def datingClassTest():
+    """
+    测试,分类,计算错误率
+    :return:
+    """
+    hoRatio = 0.10
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    m = normMat.shape[0]
+    numTestVecs = int(m*hoRatio)
+    errorCount = 0.0
+    for i in range(numTestVecs): # 前0~numTestVecs行作为测试集,后numTestVecs~m行作为训练集
+        classifierResult = classify(normMat[i,:], normMat[numTestVecs:m,:], datingLabels[numTestVecs:m], 3)
+        print("the classifier came back with:%d, the real answer is:%d" % (classifierResult, datingLabels[i]))
+        if (classifierResult != datingLabels[i]):
+            errorCount += 1.0
+    print("the total error rate is:%f" % (errorCount/float(numTestVecs)))
+
+def img2vector(filename):
+    """
+    将32 * 32的二进制图像转换为 1*1024的矩阵
+    :param filename: 文件名
+    :return:
+    """
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0, 32*i+j] = int(lineStr[j]) # 第0行,第32*i+j个元素设置为 图像中的1或0
+    return returnVect
+
+def handWritingClassTest():
+    """
+    图片分类算法, 采用k-近邻相似处理
+    :return:
+    """
+    hwLables = []
+    trainingFileList = listdir('trainingDigits')
+    m = len(trainingFileList)
+    trainingMat = zeros((m, 1024))
+    for i in range(m):
+        fileNameStr = trainingFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        hwLables.append(classNumStr)
+        trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
+    testFileList = listdir('testDigits')
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
+        classifierResult = classify(vectorUnderTest, trainingMat, hwLables, 5)
+        print("the classifier came back with: %d, the real answer is:%d" % (classifierResult, classNumStr))
+        if (classifierResult != classNumStr):
+            errorCount += 1.0
+    print("the total number of error is:%d" % (errorCount))
+    print("the total error rate is:%f" % (errorCount / float(mTest)))
+
+
 
 # group, labels = createDataSet()
 # print(classify([0, 0], group, labels, 3))
 
+# datingClassTest()
+
+
+"""
+
 datingDataMat, datingLabels = file2matrix("datingTestSet2.txt")
-print(datingDataMat)
-# print(datingLabels[0:20])
+
+normMat, ranges, minVals = autoNorm(datingDataMat)
+print(normMat)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.scatter(datingDataMat[:,1], datingDataMat[:,2])
+ax.scatter(normMat[:,0], normMat[:,1], 15.0*array(datingLabels), 15.0*array(datingLabels))
 plt.show()
+
+"""
+
+# handWritingClassTest()
+
 
 
