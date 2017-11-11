@@ -38,4 +38,5 @@ def randCent(dataSet, k):
 #  test
 numMat = mat(loadDataSet('testSet.txt'))
 print(min(numMat[:,1]))
+print(max(numMat[:,1]))
 
