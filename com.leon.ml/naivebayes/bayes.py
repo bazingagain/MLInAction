@@ -34,7 +34,7 @@ def setOfWords2Vec(vocabList, inputSet):
 def trainNB0(trainMatrix, trainCategory):
     numTrainDocs = len(trainMatrix)
     numWords = len(trainMatrix[0])
-    pAbusive = sum(trainCategory) / float(numTrainDocs)
+    pAbusive = (sum(trainCategory) +1) / float(numTrainDocs + 2*1)
     p0Num = ones(numWords)
     p1Num = ones(numWords)  # change to ones()
     p0Denom = 2.0
@@ -46,14 +46,13 @@ def trainNB0(trainMatrix, trainCategory):
         else:
             p0Num += trainMatrix[i]
             p0Denom += sum(trainMatrix[i])
-    p1Vect = log(p1Num / p1Denom)  # change to log()
+    p1Vect = log(p1Num / p1Denom)  # P(w0|ci)P(w1|ci)...P(wn|ci)相乘,可能造成下溢出（太多小数相乘）,所以使用log去自然对数
     p0Vect = log(p0Num / p0Denom)  # change to log()
     return p0Vect, p1Vect, pAbusive
 
 
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
     p1 = sum(vec2Classify * p1Vec) + log(pClass1)  # element-wise mult
-    print(log(pClass1))
     p0 = sum(vec2Classify * p0Vec) + log(1.0 - pClass1)
     if p1 > p0:
         return 1
@@ -74,14 +73,14 @@ def testingNB():
     myVocabList = createVocabList(listOPosts)
     trainMat = []
     for postinDoc in listOPosts:
-        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
+        trainMat.append(bagOfWords2VecMN(myVocabList, postinDoc))
     p0V, p1V, pAb = trainNB0(array(trainMat), array(listClasses))
     #测试阶段
     testEntry = ['love', 'my', 'dalmation']
-    thisDoc = array(setOfWords2Vec(myVocabList, testEntry))
+    thisDoc = array(bagOfWords2VecMN(myVocabList, testEntry))
     print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb))
     testEntry = ['stupid', 'garbage']
-    thisDoc = array(setOfWords2Vec(myVocabList, testEntry))
+    thisDoc = array(bagOfWords2VecMN(myVocabList, testEntry))
     print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb))
 testingNB()
 
