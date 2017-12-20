@@ -22,10 +22,8 @@ def loadDataSet(fileName):  # general function to parse tab -delimited floats
         dataMat.append(curLine)
     return dataMat, indexList
 
-
 def distEclud(vecA, vecB):
     return sqrt(sum(power(vecA - vecB, 2)))  # 计算欧式距离
-
 
 def randCent(dataSet, k):
     n = shape(dataSet)[1]
